@@ -15,6 +15,7 @@ parser.add_argument("--max-depth", "-d", type=int, help="Maximum recursion depth
 parser.add_argument("--raw", action="store_true", help="Print raw JSON")
 parser.add_argument("--verbose", "-v", action="store_true", help="Include descriptions in the output")
 parser.add_argument("--bigtap", action="store_true", help="Support BigTap controller")
+parser.add_argument("--sorted", "-s", action="store_true", help="Sort names of child nodes")
 
 args = parser.parse_args()
 
@@ -38,9 +39,15 @@ def pretty_type(node):
     else:
         return t['leafType'].lower()
 
+
 def traverse(node, depth=0, name="root"):
     def output(*s):
         print " " * (depth * 2) + ' '.join(s)
+
+    def order(nodes)
+        if args.sorted:
+            return sorted(nodes['childNodes'])
+        return nodes['childNodes']
 
     if args.max_depth is not None and depth > args.max_depth:
         return
@@ -59,7 +66,7 @@ def traverse(node, depth=0, name="root"):
     if node['nodeType'] == 'CONTAINER' or node['nodeType'] == 'LIST_ELEMENT':
         if node['nodeType'] == 'CONTAINER':
             output(name, description)
-        for child_name in node['childNodes']:
+        for child_name in order(node):
             child = node['childNodes'][child_name]
             traverse(child, depth+1, child_name)
     elif node['nodeType'] == 'LIST':
