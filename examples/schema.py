@@ -26,18 +26,18 @@ else:
 
 def pretty_type(node):
     if not 'typeSchemaNode' in node:
-        return node['leafType'].lower()
+        return node.leafType.lower()
 
-    t = node['typeSchemaNode']
+    t = node.typeSchemaNode
 
-    if t['leafType'] == 'ENUMERATION':
-        names = [x for x in t['typeValidator'] if x['type'] == 'ENUMERATION_VALIDATOR'][0]['names']
+    if t.leafType == 'ENUMERATION':
+        names = [x for x in t.typeValidator if x.type == 'ENUMERATION_VALIDATOR'][0].names
         return "enum { %s }" % ', '.join(names)
-    elif t['leafType'] == 'UNION':
-        names = [x['name'] for x in t['typeSchemaNodes']]
+    elif t.leafType == 'UNION':
+        names = [x.name for x in t.typeSchemaNodes]
         return "union { %s }" % ', '.join(names)
     else:
-        return t['leafType'].lower()
+        return t.leafType.lower()
 
 
 def traverse(node, depth=0, name="root"):
@@ -53,7 +53,7 @@ def traverse(node, depth=0, name="root"):
         return
 
     if args.verbose and 'description' in node:
-        description = re.sub(r"\s+", " ", node['description'])
+        description = re.sub(r"\s+", " ", node.description)
         indent = " "*(depth*2) + "  # "
         description = "\n" + textwrap.fill(
             description,
@@ -63,21 +63,26 @@ def traverse(node, depth=0, name="root"):
     else:
         description = ''
 
-    if node['nodeType'] == 'CONTAINER' or node['nodeType'] == 'LIST_ELEMENT':
-        if node['nodeType'] == 'CONTAINER':
-            output(name, description)
-        for child_name in order(node):
-            child = node['childNodes'][child_name]
-            traverse(child, depth+1, child_name)
-    elif node['nodeType'] == 'LIST':
-        output(name, "(list)", description)
-        traverse(node['listElementSchemaNode'], depth, name)
-    elif node['nodeType'] == 'LEAF':
-        output(name, ":", pretty_type(node), description)
-    elif node['nodeType'] == 'LEAF_LIST':
-        output(name, ":", "list of", pretty_type(node['leafSchemaNode']), description)
+    if args.verbose:
+        config = "config" in node.dataSources and "(config)" or ""
     else:
-        assert False, "unknown node type %s" % node['nodeType']
+        config = ""
+
+    if node.nodeType == 'CONTAINER' or node.nodeType == 'LIST_ELEMENT':
+        if node.nodeType == 'CONTAINER':
+            output(name, description)
+        for child_name in node.childNodes:
+            child = getattr(node.childNodes, child_name)
+            traverse(child, depth+1, child_name)
+    elif node.nodeType == 'LIST':
+        output(name, "(list)", description)
+        traverse(node.listElementSchemaNode, depth, name)
+    elif node.nodeType == 'LEAF':
+        output(name, ":", pretty_type(node), config, description)
+    elif node.nodeType == 'LEAF_LIST':
+        output(name, ":", "list of", pretty_type(node.leafSchemaNode), config, description)
+    else:
+        assert False, "unknown node type %s" % node.nodeType
 
 path = args.path.replace('.', '/').replace('_', '-')
 
